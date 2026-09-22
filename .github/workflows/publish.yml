@@ -1,0 +1,30 @@
+name: Publish
+
+# Publishes to npm when a version tag is pushed. Auth is npm trusted
+# publishing (OIDC), so there is no token in this repo. The tag must match
+# package.json, so a tag pushed against the wrong commit stops here.
+on:
+  push:
+    tags: ['v*']
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # OIDC token for npm
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          registry-url: https://registry.npmjs.org
+      # Trusted publishing needs npm 11.5.1 or later.
+      - run: npm install -g npm@latest
+      - run: |
+          tag="${GITHUB_REF_NAME#v}"
+          pkg="$(node -p "require('./package.json').version")"
+          test "$tag" = "$pkg" || { echo "tag v$tag != package.json $pkg"; exit 1; }
+      - run: npm ci
+      # prepublishOnly runs lint, typecheck, tests and build.
+      - run: npm publish
