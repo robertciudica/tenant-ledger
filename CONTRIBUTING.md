@@ -73,6 +73,29 @@ comments that say why rather than what. A comment explaining an unusual
 decision, especially one that looks wrong at first glance, is the most
 valuable thing in a diff.
 
+## Releasing
+
+Publishing is done by `.github/workflows/publish.yml` on a version tag,
+through npm trusted publishing. There is no npm token anywhere: the workflow
+authenticates with an OIDC token that npm has been told to accept from this
+repository and this workflow file, and npm attaches provenance to the release.
+
+```sh
+# Add the entry to CHANGELOG.md, then stage it so the bump commits it.
+git add CHANGELOG.md
+npm version patch        # or minor, or major. Bumps package.json, commits, tags.
+git push --follow-tags
+```
+
+The workflow refuses if the tag and `package.json` disagree, then runs
+`npm publish`, whose `prepublishOnly` runs lint, typecheck, tests and the
+build. A failure anywhere leaves the registry untouched.
+
+If the trusted publisher on npmjs.com is ever recreated, it must name
+`robertciudica/tenant-ledger`, workflow `publish.yml`, with `npm publish`
+allowed, and package publishing access should stay on "require two-factor
+authentication and disallow tokens".
+
 ## Reporting something
 
 A bug in a ledger can be a money bug. If you think you have found one that

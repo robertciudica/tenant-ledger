@@ -154,3 +154,6 @@ npm run build     # tsup, dual ESM/CJS with declarations
 
 The Postgres store is covered by `npm test` through PGlite. The concurrency
 tests need two connections and skip unless `DATABASE_URL` is set.
+
+Releases are cut with `npm version` and a tag push; see Releasing in
+`CONTRIBUTING.md`. Never run `npm publish` by hand.
