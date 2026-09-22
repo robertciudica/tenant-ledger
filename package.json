@@ -1,0 +1,108 @@
+{
+  "name": "tenant-ledger",
+  "version": "1.0.0",
+  "description": "Append-only, event-sourced, multi-tenant accounting core extracted from a production SaaS. No runtime dependencies.",
+  "license": "MIT",
+  "author": "Robert Ciudica",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/robertciudica/tenant-ledger.git"
+  },
+  "homepage": "https://github.com/robertciudica/tenant-ledger#readme",
+  "bugs": {
+    "url": "https://github.com/robertciudica/tenant-ledger/issues"
+  },
+  "type": "commonjs",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "typesVersions": {
+    "*": {
+      "testing": [
+        "./dist/testing.d.ts"
+      ],
+      "postgres": [
+        "./dist/postgres.d.ts"
+      ]
+    }
+  },
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    },
+    "./testing": {
+      "import": {
+        "types": "./dist/testing.d.mts",
+        "default": "./dist/testing.mjs"
+      },
+      "require": {
+        "types": "./dist/testing.d.ts",
+        "default": "./dist/testing.js"
+      }
+    },
+    "./postgres": {
+      "import": {
+        "types": "./dist/postgres.d.mts",
+        "default": "./dist/postgres.mjs"
+      },
+      "require": {
+        "types": "./dist/postgres.d.ts",
+        "default": "./dist/postgres.js"
+      }
+    },
+    "./schema.sql": "./dist/schema.sql",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=20.11"
+  },
+  "keywords": [
+    "ledger",
+    "accounting",
+    "double-entry",
+    "idempotency",
+    "multi-tenant",
+    "event-sourcing",
+    "postgres",
+    "billing",
+    "invoicing"
+  ],
+  "scripts": {
+    "build": "tsup && cp src/postgres/schema.sql dist/schema.sql",
+    "demo": "npm run build --silent && node examples/walkthrough.mjs",
+    "bench": "npm run build --silent && node examples/bench.mjs",
+    "test": "NODE_OPTIONS=\"--experimental-vm-modules --disable-warning=ExperimentalWarning\" jest",
+    "test:watch": "NODE_OPTIONS=\"--experimental-vm-modules --disable-warning=ExperimentalWarning\" jest --watch",
+    "test:coverage": "NODE_OPTIONS=\"--experimental-vm-modules --disable-warning=ExperimentalWarning\" jest --coverage",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome lint .",
+    "lint:fix": "biome lint --write .",
+    "prepublishOnly": "npm run lint && npm run typecheck && npm test && npm run build"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.13",
+    "@electric-sql/pglite": "^0.5.8",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^22.10.0",
+    "@types/pg": "^8.23.1",
+    "jest": "^30.2.0",
+    "pg": "^8.23.0",
+    "ts-jest": "^29.4.6",
+    "tsup": "^8.5.1",
+    "typescript": "^5.7.2"
+  }
+}

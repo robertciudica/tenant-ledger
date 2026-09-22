@@ -1,0 +1,8 @@
+node_modules/
+dist/
+coverage/
+*.log
+
+# Personal notes, not part of the repo
+docs/article-outline.md
+docs/case-study.md

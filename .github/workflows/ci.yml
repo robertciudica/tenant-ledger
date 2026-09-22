@@ -1,0 +1,82 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  # The suite as a contributor runs it: no database, no network, no env vars.
+  test:
+    name: Node ${{ matrix.node }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ['20', '22', '24']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+
+  # The same suite with a real server, which is the only way to run the
+  # concurrency tests: they need two connections to contend for a row lock.
+  postgres:
+    name: Postgres ${{ matrix.postgres }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        postgres: ['16', '18']
+    services:
+      postgres:
+        image: postgres:${{ matrix.postgres }}
+        env:
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm test
+        env:
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres
+
+  # A published package is a different artifact from a source tree. This
+  # builds it, checks its shape, and imports it both ways.
+  package:
+    name: Package
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - name: Check the published shape
+        run: |
+          npx publint
+          npx @arethetypeswrong/cli --pack . --ignore-rules no-resolution
+      - name: Import it both ways
+        run: |
+          node -e "const l = require('./dist/index.js'); if (!l.BillingService) throw new Error('CJS entry is empty')"
+          node -e "const p = require('./dist/postgres.js'); if (!p.PostgresLedgerStore) throw new Error('CJS postgres entry is empty')"
+          node --input-type=module -e "import('./dist/index.mjs').then(m => { if (!m.BillingService) throw new Error('ESM entry is empty') })"
+          node -e "const fs=require('fs'); if (!fs.readFileSync('./dist/schema.sql','utf8').includes('event_log_org_key_uq')) throw new Error('schema.sql did not ship')"
